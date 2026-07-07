@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order {{ order['id'] }} — {{ shop_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap">
+    <div class="masthead">
+      <span class="shop">{{ shop_name }}</span>
+      <span class="tag">Print Desk</span>
+    </div>
+
+    <h1>Order received</h1>
+    <p class="subtitle">Scan below to pay via UPI. We'll start printing once payment is confirmed.</p>
+
+    <div class="ticket">
+      <div style="text-align:center; margin-bottom:12px;">
+        <span class="order-id">ORDER #{{ order['id'] }}</span>
+      </div>
+
+      <div class="amount-stamp">
+        <div class="num">₹{{ "%.2f"|format(order['amount']) }}</div>
+        <div class="lbl">amount to pay</div>
+      </div>
+
+      <div class="qr-box">
+        <img src="{{ url_for('payment_qr', order_id=order['id']) }}" alt="UPI payment QR">
+      </div>
+
+      <div class="ticket-row"><span class="label">Name</span><span class="value">{{ order['student_name'] }}</span></div>
+      {% if order['roll_no'] %}<div class="ticket-row"><span class="label">Roll no.</span><span class="value">{{ order['roll_no'] }}</span></div>{% endif %}
+      <div class="ticket-row"><span class="label">Phone</span><span class="value">{{ order['phone'] }}</span></div>
+      <div class="ticket-row"><span class="label">File</span><span class="value">{{ order['original_filename'] }}</span></div>
+      <div class="ticket-row"><span class="label">Print type</span><span class="value">{{ order['print_type']|upper }}</span></div>
+      <div class="ticket-row"><span class="label">Pages × Copies</span><span class="value">{{ order['pages'] }} × {{ order['copies'] }}</span></div>
+      {% if order['notes'] %}<div class="ticket-row"><span class="label">Notes</span><span class="value">{{ order['notes'] }}</span></div>{% endif %}
+      <div class="ticket-row"><span class="label">Status</span><span class="value"><span class="status-pill status-{{ order['status'] }}">{{ order['status'] }}</span></span></div>
+    </div>
+
+    <p class="subtitle" style="margin-top:20px; font-size:0.85rem;">
+      Keep this page or a screenshot of your Order ID — we'll call you once it's printed and ready for pickup, just 100m from campus.
+    </p>
+
+    <a href="{{ url_for('index') }}" class="btn secondary">Place another order</a>
+  </div>
+</body>
+</html>

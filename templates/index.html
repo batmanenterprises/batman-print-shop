@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ shop_name }} — Print Order</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap">
+    <div class="masthead">
+      <span class="shop">{{ shop_name }}</span>
+      <span class="tag">Print Desk</span>
+    </div>
+
+    <h1>Send a file to print</h1>
+    <p class="subtitle">Upload your file, choose your print options, and pay — we'll have it ready to hand over.</p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('submit_order') }}" method="post" enctype="multipart/form-data">
+      <label>Your name *</label>
+      <input type="text" name="student_name" required>
+
+      <div class="two-col">
+        <div>
+          <label>Roll no. (optional)</label>
+          <input type="text" name="roll_no">
+        </div>
+        <div>
+          <label>Phone number *</label>
+          <input type="tel" name="phone" required>
+        </div>
+      </div>
+
+      <label>Print type</label>
+      <div class="radio-row">
+        <label class="radio-card active" id="card-bw">
+          <input type="radio" name="print_type" value="bw" checked onclick="selectType('bw')">
+          Black &amp; White
+          <span class="price">₹{{ price_bw }}/page</span>
+        </label>
+        <label class="radio-card" id="card-color">
+          <input type="radio" name="print_type" value="color" onclick="selectType('color')">
+          Color
+          <span class="price">₹{{ price_color }}/page</span>
+        </label>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <label>No. of pages</label>
+          <input type="number" name="pages" min="1" value="1" required>
+        </div>
+        <div>
+          <label>Copies</label>
+          <input type="number" name="copies" min="1" value="1" required>
+        </div>
+      </div>
+
+      <label>File</label>
+      <div class="file-drop">
+        PDF, DOC/DOCX, JPG or PNG — up to 25MB
+        <input type="file" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+      </div>
+
+      <label>Notes for us (optional)</label>
+      <textarea name="notes" placeholder="e.g. spiral bind, staple top-left, single-sided..."></textarea>
+
+      <button type="submit" class="btn">Get price &amp; pay</button>
+    </form>
+  </div>
+
+  <script>
+    function selectType(type) {
+      document.getElementById('card-bw').classList.toggle('active', type === 'bw');
+      document.getElementById('card-color').classList.toggle('active', type === 'color');
+    }
+  </script>
+</body>
+</html>

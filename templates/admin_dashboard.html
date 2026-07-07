@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders — {{ shop_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap admin-wrap">
+    <div class="masthead">
+      <span class="shop">{{ shop_name }}</span>
+      <span class="tag"><a href="{{ url_for('admin_logout') }}" style="color:inherit;">Log out</a></span>
+    </div>
+
+    <h1>Incoming orders</h1>
+    <p class="subtitle">Newest first. Mark Paid after you confirm payment on your UPI app, then Printed once it's done.</p>
+
+    {% if not orders %}
+      <p class="subtitle">No orders yet.</p>
+    {% else %}
+    <table class="orders">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Student</th>
+          <th>Job</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td data-label="Order"><span class="order-id">#{{ o['id'] }}</span><br><small>{{ o['created_at'] }}</small></td>
+          <td data-label="Student">{{ o['student_name'] }}{% if o['roll_no'] %} ({{ o['roll_no'] }}){% endif %}<br><small>{{ o['phone'] }}</small></td>
+          <td data-label="Job">{{ o['print_type']|upper }} · {{ o['pages'] }}p × {{ o['copies'] }}<br><small>{{ o['original_filename'] }}</small>{% if o['notes'] %}<br><small>📝 {{ o['notes'] }}</small>{% endif %}</td>
+          <td data-label="Amount">₹{{ "%.2f"|format(o['amount']) }}</td>
+          <td data-label="Status"><span class="status-pill status-{{ o['status'] }}">{{ o['status'] }}</span></td>
+          <td data-label="Actions">
+            <div class="action-btns">
+              <a class="mini-btn primary" href="{{ url_for('download_file', order_id=o['id']) }}">Download</a>
+              {% if o['status'] == 'pending' %}
+              <form action="{{ url_for('update_status', order_id=o['id'], new_status='paid') }}" method="post" style="display:inline;">
+                <button class="mini-btn" type="submit">Mark Paid</button>
+              </form>
+              {% elif o['status'] == 'paid' %}
+              <form action="{{ url_for('update_status', order_id=o['id'], new_status='printed') }}" method="post" style="display:inline;">
+                <button class="mini-btn" type="submit">Mark Printed</button>
+              </form>
+              {% elif o['status'] == 'printed' %}
+              <form action="{{ url_for('update_status', order_id=o['id'], new_status='delivered') }}" method="post" style="display:inline;">
+                <button class="mini-btn" type="submit">Mark Delivered</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</body>
+</html>
