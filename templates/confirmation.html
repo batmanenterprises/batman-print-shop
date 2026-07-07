@@ -13,8 +13,8 @@
       <span class="tag">Print Desk</span>
     </div>
 
-    <h1>Order received</h1>
-    <p class="subtitle">Scan below to pay via UPI. We'll start printing once payment is confirmed.</p>
+    <h1 id="headline">Complete your payment</h1>
+    <p class="subtitle" id="subline">Pick your UPI app below — the amount is filled in automatically.</p>
 
     <div class="ticket">
       <div style="text-align:center; margin-bottom:12px;">
@@ -26,25 +26,173 @@
         <div class="lbl">amount to pay</div>
       </div>
 
-      <div class="qr-box">
-        <img src="{{ url_for('payment_qr', order_id=order['id']) }}" alt="UPI payment QR">
+      <!-- Payment step: shown until the customer taps a pay button -->
+      <div id="pay-step">
+        <div class="pay-apps">
+          <a class="pay-app-btn" href="{{ upi_links['gpay'] }}" onclick="startWaiting()">
+            <span class="pay-app-icon icon-gpay">G</span> GPay
+          </a>
+          <a class="pay-app-btn" href="{{ upi_links['phonepe'] }}" onclick="startWaiting()">
+            <span class="pay-app-icon icon-phonepe">Pe</span> PhonePe
+          </a>
+          <a class="pay-app-btn" href="{{ upi_links['paytm'] }}" onclick="startWaiting()">
+            <span class="pay-app-icon icon-paytm">P</span> Paytm
+          </a>
+          <a class="pay-app-btn" href="{{ upi_links['bhim'] }}" onclick="startWaiting()">
+            <span class="pay-app-icon icon-bhim">B</span> BHIM
+          </a>
+        </div>
+        <a class="pay-app-btn" style="margin-top:10px; justify-content:center;" href="{{ upi_links['generic'] }}" onclick="startWaiting()">
+          <span class="pay-app-icon" style="background: var(--red);">↗</span> Other UPI app
+        </a>
+
+        <div class="qr-toggle">
+          <button type="button" onclick="toggleQR()">or scan a QR code instead</button>
+        </div>
+        <div class="qr-box" id="qr-box" style="display:none;">
+          <img src="{{ url_for('payment_qr', order_id=order['id']) }}" alt="UPI payment QR">
+        </div>
+
+        <button type="button" class="btn" onclick="startWaiting()">I've completed the payment</button>
       </div>
 
-      <div class="ticket-row"><span class="label">Name</span><span class="value">{{ order['student_name'] }}</span></div>
-      {% if order['roll_no'] %}<div class="ticket-row"><span class="label">Roll no.</span><span class="value">{{ order['roll_no'] }}</span></div>{% endif %}
+      <!-- Waiting / hero illustration step -->
+      <div id="hero-stage" class="hero-stage" style="display:none;">
+        <svg id="hero-svg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:280px;">
+          <ellipse cx="150" cy="178" rx="120" ry="8" fill="#000" opacity="0.35"/>
+
+          <!-- copier -->
+          <g>
+            <rect x="185" y="110" width="70" height="55" rx="4" fill="#232329" stroke="#3a3a42" stroke-width="2"/>
+            <rect x="192" y="118" width="56" height="14" rx="2" fill="#0c0c0e"/>
+            <circle id="copier-light" cx="245" cy="150" r="3.5" fill="#2fae66"/>
+            <rect x="196" y="150" width="42" height="4" fill="#45454e"/>
+          </g>
+
+          <!-- flying pages -->
+          <g id="pages">
+            <rect class="fly-paper" x="200" y="112" width="16" height="12" rx="1" fill="#f2f0e9"/>
+            <rect class="fly-paper" x="212" y="112" width="16" height="12" rx="1" fill="#f2f0e9"/>
+            <rect class="fly-paper" x="224" y="112" width="16" height="12" rx="1" fill="#f2f0e9"/>
+          </g>
+
+          <!-- hero silhouette -->
+          <g id="hero-figure" transform="translate(85,55)">
+            <path class="cape" d="M20 25 C -15 45, -18 95, 5 118 L 20 100 L 38 118 C 55 95, 52 45, 20 25 Z" fill="#15151a" stroke="#d81324" stroke-width="1.5"/>
+            <rect x="8" y="30" width="24" height="55" rx="8" fill="#1c1c22"/>
+            <circle cx="20" cy="16" r="13" fill="#1c1c22"/>
+            <path d="M8 12 C 8 3, 32 3, 32 12 L 30 18 C 24 12, 16 12, 10 18 Z" fill="#0c0c0e"/>
+            <rect x="0" y="45" width="9" height="26" rx="4" fill="#1c1c22" id="hero-arm"/>
+          </g>
+        </svg>
+
+        <p class="hero-caption" id="hero-caption">
+          <span class="spinner-dots"><span></span><span></span><span></span></span><br>
+          Waiting for your payment to land...
+        </p>
+      </div>
+
+      <div class="ticket-row" style="margin-top:10px;"><span class="label">Name</span><span class="value">{{ order['student_name'] }}</span></div>
       <div class="ticket-row"><span class="label">Phone</span><span class="value">{{ order['phone'] }}</span></div>
       <div class="ticket-row"><span class="label">File</span><span class="value">{{ order['original_filename'] }}</span></div>
       <div class="ticket-row"><span class="label">Print type</span><span class="value">{{ order['print_type']|upper }}</span></div>
       <div class="ticket-row"><span class="label">Pages × Copies</span><span class="value">{{ order['pages'] }} × {{ order['copies'] }}</span></div>
       {% if order['notes'] %}<div class="ticket-row"><span class="label">Notes</span><span class="value">{{ order['notes'] }}</span></div>{% endif %}
-      <div class="ticket-row"><span class="label">Status</span><span class="value"><span class="status-pill status-{{ order['status'] }}">{{ order['status'] }}</span></span></div>
+      <div class="ticket-row"><span class="label">Status</span><span class="value"><span class="status-pill status-{{ order['status'] }}" id="status-pill">{{ order['status'] }}</span></span></div>
     </div>
 
     <p class="subtitle" style="margin-top:20px; font-size:0.85rem;">
-      Keep this page or a screenshot of your Order ID — we'll call you once it's printed and ready for pickup, just 100m from campus.
+      Keep this page open, or screenshot your Order ID — we're just 100m from campus.
     </p>
 
     <a href="{{ url_for('index') }}" class="btn secondary">Place another order</a>
   </div>
+
+  <style>
+    .fly-paper { opacity: 0; }
+    #hero-stage.active .fly-paper {
+      animation: flyUp 1.6s infinite ease-in;
+    }
+    #hero-stage.active .fly-paper:nth-child(2) { animation-delay: 0.4s; }
+    #hero-stage.active .fly-paper:nth-child(3) { animation-delay: 0.8s; }
+    @keyframes flyUp {
+      0% { opacity: 0; transform: translate(0,0) rotate(0deg); }
+      15% { opacity: 1; }
+      100% { opacity: 0; transform: translate(10px,-46px) rotate(18deg); }
+    }
+    #hero-stage.active .cape {
+      animation: capeSway 1.8s infinite ease-in-out;
+      transform-origin: 20px 25px;
+    }
+    @keyframes capeSway {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(4deg); }
+    }
+    #hero-stage.active #hero-arm {
+      animation: armPump 0.5s infinite ease-in-out;
+      transform-origin: 4px 45px;
+    }
+    @keyframes armPump {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-18deg); }
+    }
+    #hero-stage.done #copier-light { fill: #2fae66; }
+  </style>
+
+  <script>
+    const orderId = "{{ order['id'] }}";
+    let pollTimer = null;
+
+    function toggleQR() {
+      const box = document.getElementById('qr-box');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function startWaiting() {
+      document.getElementById('pay-step').style.display = 'none';
+      document.getElementById('hero-stage').style.display = 'block';
+      document.getElementById('hero-stage').classList.add('active');
+      document.getElementById('headline').textContent = 'Hang tight...';
+      document.getElementById('subline').textContent = "We'll confirm the moment your payment lands.";
+      if (!pollTimer) {
+        pollTimer = setInterval(checkStatus, 4000);
+        checkStatus();
+      }
+    }
+
+    function checkStatus() {
+      fetch('/api/status/' + orderId)
+        .then(r => r.json())
+        .then(data => {
+          const pill = document.getElementById('status-pill');
+          pill.textContent = data.status;
+          pill.className = 'status-pill status-' + data.status;
+
+          const caption = document.getElementById('hero-caption');
+          const stage = document.getElementById('hero-stage');
+
+          if (data.status === 'pending') {
+            caption.innerHTML = '<span class="spinner-dots"><span></span><span></span><span></span></span><br>Waiting for your payment to land...';
+          } else if (data.status === 'paid') {
+            document.getElementById('headline').textContent = 'Payment confirmed!';
+            document.getElementById('subline').textContent = 'Your file has entered the print queue.';
+            caption.innerHTML = '<b>Payment confirmed.</b> Your print job just joined the queue — hero is warming up the copier...';
+          } else if (data.status === 'printed') {
+            document.getElementById('headline').textContent = 'Fresh off the press!';
+            document.getElementById('subline').textContent = 'Come by the shop — 100m from campus.';
+            stage.classList.remove('active');
+            stage.classList.add('done');
+            caption.innerHTML = '<b>Printed and ready.</b> Swing by the shop to pick it up!';
+          } else if (data.status === 'delivered') {
+            document.getElementById('headline').textContent = 'Delivered!';
+            document.getElementById('subline').textContent = 'Thanks for printing with us.';
+            stage.classList.remove('active');
+            caption.innerHTML = '<b>All done.</b> Thanks for stopping by!';
+            clearInterval(pollTimer);
+          }
+        })
+        .catch(() => {});
+    }
+  </script>
 </body>
 </html>

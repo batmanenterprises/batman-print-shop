@@ -1,4 +1,4 @@
-# {{ Your Shop Name }} — Online Print Ordering
+# Batman Enterprises — Online Print Ordering
 
 A simple web app for your print shop:
 - Students scan a QR code → open a page → upload their file, pick B&W/Color, pages, copies

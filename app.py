@@ -92,7 +92,7 @@ def index():
 @app.route("/submit", methods=["POST"])
 def submit_order():
     student_name = request.form.get("student_name", "").strip()
-    roll_no = request.form.get("roll_no", "").strip()
+    roll_no = ""  # roll number field removed from the order form
     phone = request.form.get("phone", "").strip()
     print_type = request.form.get("print_type", "bw")
     pages = request.form.get("pages", "1")
@@ -145,11 +145,38 @@ def confirmation(order_id):
     conn.close()
     if not order:
         abort(404)
+
+    note = f"Print Order {order_id}"
+    pa = UPI_ID
+    pn = UPI_PAYEE_NAME.replace(" ", "%20")
+    am = order["amount"]
+    common = f"pa={pa}&pn={pn}&am={am}&cu=INR&tn={note.replace(' ', '%20')}"
+    upi_links = {
+        "gpay": f"tez://upi/pay?{common}",
+        "phonepe": f"phonepe://pay?{common}",
+        "paytm": f"paytmmp://pay?{common}",
+        "bhim": f"bhim://pay?{common}",
+        "generic": f"upi://pay?{common}",
+    }
+
     return render_template(
         "confirmation.html",
         order=order,
         shop_name=SHOP_NAME,
+        upi_links=upi_links,
     )
+
+
+@app.route("/api/status/<order_id>")
+def api_status(order_id):
+    """Returns the current order status as JSON, polled by the confirmation
+    page so the customer's screen updates live once you mark it Paid/Printed."""
+    conn = get_db()
+    order = conn.execute("SELECT status FROM orders WHERE id = ?", (order_id,)).fetchone()
+    conn.close()
+    if not order:
+        abort(404)
+    return {"status": order["status"]}
 
 
 @app.route("/qr/<order_id>")
