@@ -1,81 +1,75 @@
 # Batman Enterprises — Online Print Ordering
 
-A simple web app for your print shop:
-- Students scan a QR code → open a page → upload their file, pick B&W/Color, pages, copies
-- They see a total price and a UPI QR (pre-filled with the exact amount) to pay
-- You log into `/admin`, see every order, download the file, print it, and mark it Paid → Printed → Delivered
-
-No printer automation, no local software needed on your side beyond a browser. Files are stored on the server; you just download and print like any normal file.
-
----
-
-## 1. Before you deploy — edit `app.py`
-
-Open `app.py` and change the top **CONFIG** section:
-
-```python
-SHOP_NAME = "Your Shop Name"
-UPI_ID = "yourshopname@upi"        # <-- YOUR real UPI ID (from any UPI app)
-UPI_PAYEE_NAME = "Your Shop Name"
-PRICE_PER_PAGE_BW = 2.0
-PRICE_PER_PAGE_COLOR = 5.0
-ADMIN_PASSWORD = "changeme123"      # <-- pick a real password, don't leave this default
-```
-
-That's the only file you need to touch to get started.
+Students scan a QR → upload a file → pay through a secure Razorpay checkout
+(GPay, PhonePe, Paytm, BHIM all built in) → the order **only appears in your
+dashboard once payment is actually confirmed** — automatically, with the
+order ID attached. You download the file, print it, and mark it
+Printed → Delivered.
 
 ---
 
-## 2. Deploy online (Render.com — free tier available, easiest for beginners)
+## 1. Set up Razorpay (do this first)
 
-1. Create a free account at **render.com**.
-2. Push this folder to a **GitHub repository** (create a free GitHub account if you don't have one, create a new repo, upload all these files — GitHub's website lets you drag-and-drop files, no git command line needed).
-3. In Render, click **New → Web Service**, connect your GitHub repo.
-4. Set:
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `gunicorn app:app`
-   - **Instance Type:** Free (or the cheapest paid tier for always-on uptime — free tier sleeps after inactivity, which means the first visitor after a while waits ~30 seconds for it to wake up)
-5. Add an **Environment Variable**: `FLASK_SECRET_KEY` = any random long text string (this keeps admin logins secure).
-6. Deploy. Render gives you a URL like `https://yourshop.onrender.com` — that's your live website.
+1. Go to **razorpay.com** → Sign Up. Use your shop's email + phone.
+2. You can start immediately in **Test Mode** — no KYC needed yet, good for setting everything up.
+3. Go to **Settings → API Keys → Generate Test Key**. Copy the **Key ID** and **Key Secret**.
+4. Go to **Settings → Webhooks → Add New Webhook**:
+   - URL: `https://YOUR-LIVE-URL/webhook/razorpay` (you'll fill this in once deployed — see step 3 below)
+   - Active events: check **`payment.captured`**
+   - Save, then copy the **Webhook Secret** it gives you.
+5. When you're ready to accept **real** payments, complete KYC (Settings → Account & Settings → KYC): you'll need your **PAN, Aadhaar, and a bank account** (a personal savings account is fine for a sole proprietor). Takes 1–3 business days. Then switch to **Live Keys** the same way.
 
-**Note on file storage:** Render's free/basic tiers don't keep uploaded files permanently across restarts (the disk resets). For a shop actually taking daily orders, add a **Render Disk** (a few rupees/month) under your service's Settings → Disks, mounted at `/opt/render/project/src/uploads` — this keeps uploaded files safely between restarts. Alternatively, download and print each file the same day and this usually isn't an issue.
-
-### Alternative host: PythonAnywhere or Railway.app
-Both work similarly — upload the code, set the same Build/Start commands, add the environment variable, deploy. If you want, tell me which one you pick and I'll give you the exact click-by-click steps for that specific platform.
+**On fees:** standard bank-account UPI is generally fee-free under RBI's zero-MDR rule, but Razorpay may still apply a small platform/technology fee — check the exact number shown on your own Razorpay pricing page after signup, since this can vary and affects your margins.
 
 ---
 
-## 3. Make your QR code
+## 2. Add your keys as environment variables (don't hardcode them in the file)
 
-Once your site is live at your URL:
-1. Go to any free QR generator (e.g. `qr-code-generator.com` or Google "free QR code generator").
-2. Paste your live URL (e.g. `https://yourshop.onrender.com`).
-3. Download the QR image, print it, stick it up in your shop and share it with students (WhatsApp groups, college noticeboard, Instagram).
+You'll set these on Render (or wherever you deploy) as **Environment Variables**:
 
----
+| Key | Value |
+|---|---|
+| `RAZORPAY_KEY_ID` | from step 1 |
+| `RAZORPAY_KEY_SECRET` | from step 1 |
+| `RAZORPAY_WEBHOOK_SECRET` | from step 1 |
+| `FLASK_SECRET_KEY` | any random long text you make up |
 
-## 4. Your daily workflow
-
-1. Student scans QR → uploads file → pays your UPI ID directly (money lands straight in your bank account, same as any UPI payment).
-2. You open `https://yourshop.onrender.com/admin`, log in with your password.
-3. You see the order, check your UPI app to confirm the payment actually came in, click **Mark Paid**.
-4. Download the file, print it.
-5. Click **Mark Printed**, then **Mark Delivered** once you've handed it over.
+Shop name, prices, and admin password are already set directly in `app.py`.
 
 ---
 
-## 5. Local files reference
-- `app.py` — all the logic (routes, pricing, database)
-- `templates/` — the pages (order form, receipt, admin dashboard)
-- `static/style.css` — visual styling
-- `orders.db` — created automatically, stores all order records (SQLite — no separate database server needed)
-- `uploads/` — created automatically, stores uploaded files
+## 3. Deploy on Render.com
+
+1. Push this folder to a GitHub repo (same as before — drag and drop all files via GitHub's "upload files").
+2. On Render: **New → Web Service** → connect your repo.
+3. Build Command: `pip install -r requirements.txt`
+4. Start Command: `gunicorn app:app`
+5. Instance Type: Free (or paid for always-on, no sleep delay)
+6. Add all 4 environment variables from the table above.
+7. Deploy. Copy your live URL (e.g. `https://batman-print-shop.onrender.com`).
+8. Go back to Razorpay → Webhooks → paste this URL as `https://your-url/webhook/razorpay`, save.
 
 ---
 
-## 6. Things to consider adding later (optional)
-- Auto page-counting for PDFs (right now students type in page count themselves — trusts them to be honest; you can double-check after download before printing)
-- SMS/WhatsApp auto-notify when status changes to Printed
-- A payment gateway (Razorpay/Cashfree) instead of manual UPI confirmation, if order volume grows and manual checking becomes a bottleneck
+## 4. Daily workflow
 
-Happy to help with any of these whenever you're ready.
+1. Student scans your QR → fills the form → taps **Pay Now** → pays via GPay/PhonePe/Paytm/BHIM inside the secure checkout.
+2. The moment payment succeeds, Razorpay confirms it to your server (two ways: instantly in the browser, and again via webhook as a backup) — the order flips to **Paid** and appears on your `/admin` dashboard automatically. No manual checking needed.
+3. Download the file, print it.
+4. Mark **Printed**, then **Delivered** once handed over.
+5. If someone abandons payment partway, their order just won't show up — you can still peek at it via **"Show unpaid/abandoned orders"** on the dashboard if needed.
+
+---
+
+## 5. What's in this project
+- `app.py` — all logic: order creation, Razorpay order + signature verification, webhook handler, admin routes
+- `templates/` — order form, payment/receipt page, admin login & dashboard
+- `static/style.css` — the visual theme
+- `static/images/shop-qr.png` — your official GPay Business QR (used only as a manual fallback)
+- `static/images/print-hero.jpg` — the illustration shown while a print job is in the queue
+- `orders.db` — auto-created SQLite database, all order records
+- `uploads/` — auto-created, stores uploaded files
+
+## 6. Notes
+- The **manual QR fallback** on the payment page does not auto-confirm — if a customer uses it, you'll need to check your bank/UPI app yourself and mark them Paid manually via **"Show unpaid orders"**.
+- Test everything in **Test Mode** first (Razorpay gives you fake card/UPI credentials for testing) before switching to Live Keys.

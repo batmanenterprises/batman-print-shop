@@ -1,326 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pay ₹{{ "%.0f"|format(order.amount) }} — {{ shop_name }}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#000;--bg2:#0a0a0a;--bg3:#111;--bg4:#1a1a1a;
-  --text:#f5f5f7;--text2:#a1a1a6;--text3:#6e6e73;
-  --accent:#f5a623;--accent2:#ff6b35;
-  --green:#30d158;--red:#ff453a;--blue:#2997ff;
-  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
-  --radius:16px;--radius-sm:10px;--radius-xs:8px;
-  --shadow:0 4px 30px rgba(0,0,0,0.5);
-  --font:-apple-system,BlinkMacSystemFont,'Inter','Helvetica Neue',sans-serif;
-}
-html{-webkit-font-smoothing:antialiased}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.85);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border)}
-.nav-logo{font-size:18px;font-weight:600}
-.nav-logo span{color:var(--accent)}
-
-.main{padding:80px 24px 60px;max-width:520px;margin:0 auto}
-
-.success-check{width:80px;height:80px;border-radius:50%;background:rgba(48,209,88,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;animation:popIn .5s cubic-bezier(0.175,0.885,0.32,1.275)}
-.success-check svg{width:40px;height:40px;color:var(--green)}
-@keyframes popIn{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
-
-.order-id{text-align:center;margin-bottom:8px;animation:fadeUp .6s .2s ease both}
-.order-id h1{font-size:28px;font-weight:700;letter-spacing:-0.03em}
-.order-id p{color:var(--text2);font-size:15px;margin-top:4px}
-
-.details-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:28px 0;animation:fadeUp .6s .3s ease both}
-.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
-.detail-row:last-child{border-bottom:none}
-.detail-row .label{color:var(--text3);font-weight:500}
-.detail-row .value{font-weight:600;text-align:right;max-width:60%;word-break:break-all}
-.detail-row.total{border-bottom:none;border-top:2px solid var(--border2);margin-top:4px;padding-top:14px}
-.detail-row.total .label{color:var(--text);font-size:16px;font-weight:600}
-.detail-row.total .value{color:var(--accent);font-size:22px;font-weight:700}
-
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-.payment-section{animation:fadeUp .6s .4s ease both}
-.payment-section h2{font-size:20px;font-weight:600;margin-bottom:6px;letter-spacing:-0.02em}
-.payment-section .pay-subtitle{font-size:14px;color:var(--text2);margin-bottom:24px}
-
-.qr-wrapper{background:#fff;border-radius:var(--radius-sm);padding:20px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 0 40px rgba(245,166,35,0.08)}
-.qr-wrapper img{width:220px;height:220px;border-radius:4px}
-
-.pay-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.pay-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;border-radius:var(--radius-xs);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:all .25s ease;font-family:var(--font);text-decoration:none}
-.pay-btn:hover{border-color:var(--border2);background:var(--bg4);transform:translateY(-1px)}
-.pay-btn:active{transform:scale(0.97)}
-.pay-btn .app-icon{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
-.pay-btn.gpay .app-icon{background:#fff;color:#000}
-.pay-btn.phonepe .app-icon{background:#5f259f;color:#fff}
-.pay-btn.paytm .app-icon{background:#00baf2;color:#fff}
-.pay-btn.bhim .app-icon{background:#fff;color:#000}
-.pay-btn.full-width{grid-column:1/-1;background:var(--bg3);border-style:dashed}
-.pay-btn.full-width:hover{border-style:solid}
-
-.steps{display:flex;align-items:center;gap:0;margin:32px 0 24px;animation:fadeUp .6s .5s ease both}
-.step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative}
-.step-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;transition:all .4s ease}
-.step-num.done{background:var(--green);color:#000}
-.step-num.active{background:var(--accent);color:#000;animation:pulse 2s ease infinite}
-.step-num.pending{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-.step-label{font-size:11px;color:var(--text3);font-weight:500;text-align:center}
-.step-label.active{color:var(--accent)}
-.step-line{position:absolute;top:16px;left:calc(50% + 20px);right:calc(-50% + 20px);height:2px;background:var(--border)}
-.step-line.done{background:var(--green)}
-.step-line.active{background:linear-gradient(90deg,var(--green),var(--accent))}
-
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,0.4)}50%{box-shadow:0 0 0 10px rgba(245,166,35,0)}}
-
-.waiting-state{text-align:center;padding:20px 0;animation:fadeUp .4s ease both}
-.waiting-state .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.waiting-state p{font-size:15px;color:var(--text2)}
-.waiting-state .hint{font-size:13px;color:var(--text3);margin-top:6px}
-
-.completed-state{text-align:center;padding:24px 0;animation:fadeUp .5s ease both}
-.completed-icon{width:64px;height:64px;border-radius:50%;background:rgba(48,209,88,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-.completed-icon svg{width:32px;height:32px;color:var(--green)}
-.completed-state h3{font-size:20px;font-weight:600;margin-bottom:6px}
-.completed-state p{font-size:15px;color:var(--text2);margin-bottom:16px}
-.completed-state .shop-loc{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 18px;font-size:13px;color:var(--text2)}
-
-.back-link{display:block;text-align:center;margin-top:32px;font-size:14px;color:var(--text3);text-decoration:none;transition:color .2s;animation:fadeUp .6s .6s ease both}
-.back-link:hover{color:var(--text)}
-
-.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text3);font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order {{ order['id'] }} — {{ shop_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
-
-<nav>
-  <div class="nav-logo">🦇 <span>{{ shop_name }}</span></div>
-</nav>
-
-<div class="main">
-  <div class="success-check">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-  </div>
-
-  <div class="order-id">
-    <h1>Order Placed!</h1>
-    <p>Order ID: <strong>{{ order.id }}</strong></p>
-  </div>
-
-  <div class="details-card">
-    <div class="detail-row">
-      <span class="label">Name</span>
-      <span class="value">{{ order.student_name }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Phone</span>
-      <span class="value">{{ order.phone }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">File</span>
-      <span class="value">{{ order.original_filename }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Type</span>
-      <span class="value">Color</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Pages × Copies</span>
-      <span class="value">{{ order.pages }} × {{ order.copies }}</span>
-    </div>
-    {% if order.notes %}
-    <div class="detail-row">
-      <span class="label">Notes</span>
-      <span class="value">{{ order.notes }}</span>
-    </div>
-    {% endif %}
-    <div class="detail-row total">
-      <span class="label">Total</span>
-      <span class="value">₹{{ "%.0f"|format(order.amount) }}</span>
-    </div>
-  </div>
-
-  <div class="payment-section" id="paymentSection">
-    <h2>Complete Payment</h2>
-    <p class="pay-subtitle">Scan the QR below or tap your preferred UPI app</p>
-
-    <div class="qr-wrapper">
-      <img src="/qr/{{ order.id }}" alt="UPI Payment QR Code">
+  <div class="wrap">
+    <div class="masthead">
+      <span class="shop">{{ shop_name }}</span>
+      <span class="tag">Print Desk</span>
     </div>
 
-    <div class="pay-buttons">
-      <a href="{{ upi_links.gpay }}" class="pay-btn gpay" data-method="gpay" onclick="onPayClick(event, 'gpay')">
-        <span class="app-icon">G</span> Google Pay
-      </a>
-      <a href="{{ upi_links.phonepe }}" class="pay-btn phonepe" data-method="phonepe" onclick="onPayClick(event, 'phonepe')">
-        <span class="app-icon">P</span> PhonePe
-      </a>
-      <a href="{{ upi_links.paytm }}" class="pay-btn paytm" data-method="paytm" onclick="onPayClick(event, 'paytm')">
-        <span class="app-icon">₱</span> Paytm
-      </a>
-      <a href="{{ upi_links.bhim }}" class="pay-btn bhim" data-method="bhim" onclick="onPayClick(event, 'bhim')">
-        <span class="app-icon">B</span> BHIM
-      </a>
-      <a href="{{ upi_links.generic }}" class="pay-btn full-width" data-method="upi" onclick="onPayClick(event, 'upi')">
-        Open any UPI app →
-      </a>
+    <h1 id="headline">Complete your payment</h1>
+    <p class="subtitle" id="subline">One tap opens a secure checkout — GPay, PhonePe, Paytm and BHIM are all inside it.</p>
+
+    <div class="ticket">
+      <div style="text-align:center; margin-bottom:14px;">
+        <span class="order-id">ORDER #{{ order['id'] }}</span>
+      </div>
+
+      <div class="amount-stamp">
+        <div class="num">₹{{ "%.2f"|format(order['amount']) }}</div>
+        <div class="lbl">amount to pay</div>
+      </div>
+
+      <!-- Payment step -->
+      <div id="pay-step">
+        {% if order['razorpay_order_id'] %}
+        <button type="button" class="btn big" id="pay-btn">Pay ₹{{ "%.2f"|format(order['amount']) }} now</button>
+        {% else %}
+        <div class="flash">Online checkout is being set up — please use the QR code below to pay for now.</div>
+        {% endif %}
+
+        <div class="qr-toggle">
+          <button type="button" onclick="toggleQR()">
+            {% if order['razorpay_order_id'] %}or scan our QR code instead{% else %}show QR code{% endif %}
+          </button>
+        </div>
+        <div class="qr-box" id="qr-box" style="display:{{ 'none' if order['razorpay_order_id'] else 'block' }};">
+          <img src="{{ url_for('static', filename='images/shop-qr.png') }}" alt="Shop UPI QR code">
+          <p style="font-size:0.78rem; color:var(--text-dim); margin:10px 0 0;">
+            Scanning this pays your amount manually — it won't auto-update this page.
+            Tell us your Order ID (<b>#{{ order['id'] }}</b>) at the counter so we can match it.
+          </p>
+        </div>
+      </div>
+
+      <!-- Waiting / hero step -->
+      <div id="hero-stage" class="hero-stage" style="display:none;">
+        <img src="{{ url_for('static', filename='images/print-hero.jpg') }}" alt="Printing in progress">
+        <p class="hero-caption" id="hero-caption">
+          <span class="spinner-dots"><span></span><span></span><span></span></span><br>
+          Waiting for your payment to land...
+        </p>
+      </div>
+
+      <div class="ticket-row" style="margin-top:12px;"><span class="label">Name</span><span class="value">{{ order['student_name'] }}</span></div>
+      <div class="ticket-row"><span class="label">Phone</span><span class="value">{{ order['phone'] }}</span></div>
+      <div class="ticket-row"><span class="label">File</span><span class="value">{{ order['original_filename'] }}</span></div>
+      <div class="ticket-row"><span class="label">Print type</span><span class="value">{{ order['print_type']|upper }}</span></div>
+      <div class="ticket-row"><span class="label">Pages × Copies</span><span class="value">{{ order['pages'] }} × {{ order['copies'] }}</span></div>
+      {% if order['notes'] %}<div class="ticket-row"><span class="label">Notes</span><span class="value">{{ order['notes'] }}</span></div>{% endif %}
+      <div class="ticket-row"><span class="label">Status</span><span class="value"><span class="status-pill status-{{ order['status'] }}" id="status-pill">{{ order['status'] }}</span></span></div>
     </div>
 
-    <div class="divider">or scan with any UPI app</div>
-    <p style="text-align:center;font-size:13px;color:var(--text3);margin-bottom:8px">
-      UPI ID: <strong style="color:var(--text2)">{{ upi_id }}</strong>
+    <p class="subtitle" style="margin-top:22px; font-size:0.85rem;">
+      Keep this page open, or screenshot your Order ID — we're just 100m from campus.
     </p>
+
+    <a href="{{ url_for('index') }}" class="btn secondary">Place another order</a>
   </div>
 
-  <div class="steps" id="stepsBar">
-    <div class="step">
-      <div class="step-num done">1</div>
-      <span class="step-label">Uploaded</span>
-      <div class="step-line done"></div>
-    </div>
-    <div class="step">
-      <div class="step-num active" id="step2">2</div>
-      <span class="step-label active" id="step2Label">Paying</span>
-      <div class="step-line" id="step2Line"></div>
-    </div>
-    <div class="step">
-      <div class="step-num pending" id="step3">3</div>
-      <span class="step-label" id="step3Label">Verified</span>
-      <div class="step-line" id="step3Line"></div>
-    </div>
-    <div class="step">
-      <div class="step-num pending" id="step4">4</div>
-      <span class="step-label" id="step4Label">Delivered</span>
-    </div>
-  </div>
+  <script>
+    const orderId = "{{ order['id'] }}";
+    const razorpayOrderId = {{ order['razorpay_order_id']|tojson }};
+    const razorpayKeyId = "{{ razorpay_key_id }}";
+    const amountPaise = {{ amount_paise }};
+    let pollTimer = null;
 
-  <div id="stateContainer"></div>
+    function toggleQR() {
+      const box = document.getElementById('qr-box');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
 
-  <a href="/" class="back-link">← Place another order</a>
-</div>
+    function startWaiting() {
+      document.getElementById('pay-step').style.display = 'none';
+      document.getElementById('hero-stage').style.display = 'block';
+      document.getElementById('hero-stage').classList.add('active');
+      document.getElementById('headline').textContent = 'Hang tight...';
+      document.getElementById('subline').textContent = "We'll confirm the moment your payment lands.";
+      if (!pollTimer) {
+        pollTimer = setInterval(checkStatus, 4000);
+        checkStatus();
+      }
+    }
 
-<script>
-const orderId = '{{ order.id }}';
-let paymentClicked = false;
-let pollInterval = null;
+    function checkStatus() {
+      fetch('/api/status/' + orderId)
+        .then(r => r.json())
+        .then(data => {
+          const pill = document.getElementById('status-pill');
+          pill.textContent = data.status;
+          pill.className = 'status-pill status-' + data.status;
 
-function onPayClick(e, method) {
-  e.preventDefault();
-  if (paymentClicked) return;
-  paymentClicked = true;
+          const caption = document.getElementById('hero-caption');
+          const stage = document.getElementById('hero-stage');
 
-  fetch('/api/confirm-payment/' + orderId, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({method: method})
-  });
+          if (data.status === 'pending') {
+            caption.innerHTML = '<span class="spinner-dots"><span></span><span></span><span></span></span><br>Waiting for your payment to land...';
+          } else if (data.status === 'paid') {
+            document.getElementById('headline').textContent = 'Payment confirmed!';
+            document.getElementById('subline').textContent = 'Your file has entered the print queue.';
+            caption.innerHTML = '<b>Payment confirmed.</b> Your print job just joined the queue...';
+          } else if (data.status === 'printed') {
+            document.getElementById('headline').textContent = 'Fresh off the press!';
+            document.getElementById('subline').textContent = 'Come by the shop — 100m from campus.';
+            stage.classList.remove('active');
+            stage.classList.add('done');
+            caption.innerHTML = '<b>Printed and ready.</b> Swing by the shop to pick it up!';
+          } else if (data.status === 'delivered') {
+            document.getElementById('headline').textContent = 'Delivered!';
+            document.getElementById('subline').textContent = 'Thanks for printing with us.';
+            stage.classList.remove('active');
+            caption.innerHTML = '<b>All done.</b> Thanks for stopping by!';
+            clearInterval(pollTimer);
+          }
+        })
+        .catch(() => {});
+    }
 
-  window.location.href = e.currentTarget.href;
-
-  setTimeout(function() {
-    showWaiting(method);
-  }, 1500);
-
-  startPolling();
-}
-
-function showWaiting(method) {
-  var container = document.getElementById('stateContainer');
-  container.innerHTML = '<div class="waiting-state"><div class="spinner"></div><p>Waiting for payment confirmation...</p><p class="hint">Complete the payment in your UPI app. This page will update automatically once the shop verifies your payment.</p></div>';
-}
-
-function showVerified() {
-  document.getElementById('step2').className = 'step-num done';
-  document.getElementById('step2Label').className = 'step-label';
-  document.getElementById('step2Line').className = 'step-line done';
-  document.getElementById('step3').className = 'step-num done';
-  document.getElementById('step3Label').className = 'step-label';
-
-  var container = document.getElementById('stateContainer');
-  container.innerHTML = '<div class="completed-state"><div class="completed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h3>Payment Verified! 🎉</h3><p>Your order is being printed now. Come pick it up!</p><div class="shop-loc">📍 {{ shop_name }} — Just 100m from college gate</div></div>';
-
-  document.getElementById('paymentSection').style.opacity = '0.3';
-  document.getElementById('paymentSection').style.pointerEvents = 'none';
-  document.getElementById('paymentSection').style.transition = 'opacity 0.5s ease';
-}
-
-function showPrinted() {
-  document.getElementById('step2').className = 'step-num done';
-  document.getElementById('step2Label').className = 'step-label';
-  document.getElementById('step2Line').className = 'step-line done';
-  document.getElementById('step3').className = 'step-num done';
-  document.getElementById('step3Label').className = 'step-label';
-  document.getElementById('step3Line').className = 'step-line done';
-  document.getElementById('step4').className = 'step-num done';
-  document.getElementById('step4Label').className = 'step-label';
-
-  var container = document.getElementById('stateContainer');
-  container.innerHTML = '<div class="completed-state"><div class="completed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h3>Ready for Pickup! 📦</h3><p>Your prints are ready. Come grab them!</p><div class="shop-loc">📍 {{ shop_name }} — Just 100m from college gate</div></div>';
-
-  document.getElementById('paymentSection').style.opacity = '0.3';
-  document.getElementById('paymentSection').style.pointerEvents = 'none';
-  document.getElementById('paymentSection').style.transition = 'opacity 0.5s ease';
-}
-
-function showDelivered() {
-  var steps = document.querySelectorAll('.step-num');
-  for (var i = 0; i < steps.length; i++) steps[i].className = 'step-num done';
-  var lines = document.querySelectorAll('.step-line');
-  for (var i = 0; i < lines.length; i++) lines[i].className = 'step-line done';
-  var labels = document.querySelectorAll('.step-label');
-  for (var i = 0; i < labels.length; i++) labels[i].className = 'step-label';
-
-  var container = document.getElementById('stateContainer');
-  container.innerHTML = '<div class="completed-state"><div class="completed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h3>Delivered! ✅</h3><p>Thanks for choosing {{ shop_name }}!</p><div class="shop-loc">⭐ Hope to see you again!</div></div>';
-
-  document.getElementById('paymentSection').style.opacity = '0.3';
-  document.getElementById('paymentSection').style.pointerEvents = 'none';
-  document.getElementById('paymentSection').style.transition = 'opacity 0.5s ease';
-}
-
-function startPolling() {
-  if (pollInterval) return;
-  pollInterval = setInterval(function() {
-    fetch('/api/status/' + orderId)
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        var status = data.status;
-        if (status === 'paid') {
-          clearInterval(pollInterval);
-          pollInterval = null;
-          showVerified();
-        } else if (status === 'printed') {
-          clearInterval(pollInterval);
-          pollInterval = null;
-          showPrinted();
-        } else if (status === 'delivered') {
-          clearInterval(pollInterval);
-          pollInterval = null;
-          showDelivered();
-        }
-      })
-      .catch(function() {});
-  }, 3000);
-}
-
-(function checkInitial() {
-  fetch('/api/status/' + orderId)
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.status === 'paid') showVerified();
-      else if (data.status === 'printed') showPrinted();
-      else if (data.status === 'delivered') showDelivered();
-    })
-    .catch(function() {});
-})();
-</script>
+    const payBtn = document.getElementById('pay-btn');
+    if (payBtn && razorpayOrderId) {
+      payBtn.addEventListener('click', function () {
+        const options = {
+          key: razorpayKeyId,
+          amount: amountPaise,
+          currency: "INR",
+          name: "{{ shop_name }}",
+          description: "Print Order #{{ order['id'] }}",
+          order_id: razorpayOrderId,
+          prefill: {
+            name: "{{ order['student_name'] }}",
+            contact: "{{ order['phone'] }}"
+          },
+          theme: { color: "#d81324" },
+          handler: function (response) {
+            fetch('/verify_payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(response)
+            })
+              .then(r => r.json())
+              .then(() => startWaiting())
+              .catch(() => startWaiting());
+          },
+          modal: {
+            ondismiss: function () { /* user closed checkout - let them retry */ }
+          }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+      });
+    }
+  </script>
 </body>
 </html>
